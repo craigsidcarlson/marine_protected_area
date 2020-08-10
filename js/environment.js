@@ -2,59 +2,38 @@ class Environment {
   constructor(qt) {
     this.flock = [];
     this.qt = qt;
-    this.carry_capacity = 1000;
-    this.max_carry_capacity = 2000;
-    this.starting_count = width < this.max_carry_capacity ? floor(width/2) : floor(this.carry_capacity/2);
+    this.tuna_count = 5;
+    this.sardine_count = 50;
+    this.krill_count = 500;
+    this.fish = [];
 
-    this.num_offspring = 2;
-
-    this.speed = 3.8;
-    this.mass = 1;
-    this.force = 0.07;
-
-    this.breed_chance = 1;
-    this.expire_chance =  1;
-
-    this.breed_mass_min = 0.5;
-    this.bread_mass_loss = 0.02;
-    this.expire_mass_reward = 0.05;
-
-    this.red_team_count = this.starting_count / 2;
-    this.blue_team_count = this.starting_count / 2;
-
-    this.red_leader;
-    this.blue_leader;
-
-    this.red_stats = {
-      count: this.starting_count / 2,
-      avg_speed: this.speed,
-      avg_mass: this.mass,
-      avg_force: this.force
-    };
-    this.blue_stats = {
-      count: this.starting_count / 2,
-      avg_speed: this.speed,
-      avg_mass: this.mass,
-      avg_force: this.force
-    };
+    for (let i = 0; i < this.tuna_count; i++) { 
+      const tuna = new Tuna();
+      this.fish.push(tuna);
+      this.qt.insert(tuna);
+    }
+    
+    for (let i = 0; i < this.sardine_count; i++) { 
+      const sardine = new Sardine();
+      this.fish.push(sardine);
+      this.qt.insert(sardine);
+    }
+    
+    for (let i = 0; i < this.krill_count; i++) { 
+      const krill = new Krill();
+      this.fish.push(krill);
+      this.qt.insert(krill);
+    }
   }
 
-  breed_event(source, target) {
-    const will_breed = floor(random(this.breed_chance));
-    if (will_breed !== 0 || source.mass < this.breed_mass_min || this.flock.length > this.carry_capacity) return;
-    target.deleted = true;
+  breed_event(source) {
+    const will_breed = floor(random(source.breed_chance));
+    if (will_breed !== 0) return;
     for (let i = 0; i < this.num_offspring; i++) {
-      const max_force = ((source.max_force + target.max_force) / 2) + random(-0.01, 0.01);
-      const mass = ((source.mass + target.mass) / 2) + random(-0.1, 0.1);
-      const max_speed = ((source.max_speed + target.max_speed) / 2) + random(-0.1, 0.1);
-
       const stats = { max_force, mass, max_speed, team: source.team };
       const position = source.position;
-      this.add_boid(position, stats);
+      this.add_fish(position, stats);
     }
-    source.mass -= this.bread_mass_loss;
-    if (source.team) this.red_team_count++;
-    else this.blue_team_count++;
   }
 
   expire_event(source, target) {
@@ -71,19 +50,29 @@ class Environment {
     else this.red_team_count--;
   }
 
-  add_boid(p = null, s = null) {
+  add_fish(p = null, _class) {
     const index = this.flock.length;
     const position = p || { x: random(width), y: random(height) };
-    let special = false;
-    if (index === 0 || index === 1) special = true;
-    const stats = s || { max_force: this.force, mass: this.mass, max_speed: this.speed, team: index % 2, special };
-    const new_boid = new Boid(index, position, stats);
-    this.flock.push(new_boid);
-    if (index === 0) {
-      this.red_leader = new_boid;
-    } else if(index === 1) {
-      this.blue_leader = new_boid;
+    const new_fish = new _class(position);
+    this.fish.push(new_boid);
+
+    return new_fish;
+  }
+
+  draw() {
+    const new_qt = new QuadTree(canvas_boundary);
+    for(let i = 0; i < this.fish.length; i++) {
+      if(this.fish[i].deleted)  {
+        this.fish.splice(i, 1);
+        continue;
+      }
+  
+      this.fish[i].edges();
+      this.fish[i].flock();
+      this.fish[i].update();
+      const fish = this.fish[i].show();
+      new_qt.insert(fish);
     }
-    return new_boid;
+    this.qt = new_qt;
   }
 }

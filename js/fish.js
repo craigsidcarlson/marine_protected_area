@@ -1,9 +1,15 @@
 class Fish {
-  constructor(index, position, stats) {
-    this.index = index;
-    const x = position.x;
-    const y = position.y;
+  constructor(stats, position = null) {
+    let x, y;
+    if (position) {
+      x = position.x;
+      y = position.y;
+    } else {
+      x = random(width);
+      y = random(height);
+    }
 
+    // Physics properties
     this.position = createVector(x, y);
     this.velocity = p5.Vector.random2D();
     this.velocity.setMag(random(2, 4));
@@ -11,35 +17,21 @@ class Fish {
     this.align_proximity = 30;
     this.cohesion_proximity = 20;
     this.separation_proximity = 35;
-    this.special_proximity = 10;
     this.edge_proximity = 15;
     this.largest_proximity = this.align_proximity;
+    this.eat_distance = 5;
     if (this.cohesion_proximity > this.largest_proximity) this.largest_proximity = this.cohesion_proximity;
     if (this.separation_proximity > this.largest_proximity) this.largest_proximity = this.separation_proximity;
 
+    // Fish properties
     this.max_force = stats.max_force;
-    this.mass = stats.mass;
     this.max_speed = stats.max_speed;
-    this.fov = PI / 4; // 300 degrees
-    // 0: Shrimp 1: Cod
-    this.species = stats.species; 
-    if(this.team === 0) {
-      this.color = color(246, 193, 1);
-    } else {
-      this.color = color(0,139,139);
-    }
-
-    switch(this.species) {
-      case 0:
-        this.color = color(246, 193, 1);
-        break;
-      case 1:
-        this.color = color(0,139,139);
-        break;
-      case 2:
-        this.color = color(0,139,139);
-        break;
-    }
+    this.mass = stats.mass;
+    this.fov = stats.fov;
+    this.trophic_level = stats.trophic_level;
+    this.color = stats.color;
+    this.view_proximity = stats.view_proximity;
+    this.num_offspring = stats.num_offspring;
   }
 
   edges() {
@@ -63,56 +55,50 @@ class Fish {
 
   async flock() {
     const approximate_range = new Rectangle(this.position.x, this.position.y, this.largest_proximity/2, this.largest_proximity/2);
-    const boids_in_quadrant = env.qt.query(approximate_range);
+    const fish_in_quad = env.qt.query(approximate_range);
 
     let align_steering = createVector();
     let cohesion_steering = createVector();
     let separation_steering = createVector();
+    let environment_steering = createVector();
 
     let align_total = 0;
     let cohesion_total = 0;
     let separation_total = 0;
+    let enviro_total = 0;
 
-    for (let i = 0; i < boids_in_quadrant.length; i++) {
+    for (let i = 0; i < fish_in_quad.length; i++) {
         const distance = dist(
           this.position.x, 
           this.position.y, 
-          boids_in_quadrant[i].position.x,
-          boids_in_quadrant[i].position.y
+          fish_in_quad[i].position.x,
+          fish_in_quad[i].position.y
         );
         if (distance === 0) continue;
 
         // Alignment
-        // if (distance < this.align_proximity && this.isFriendly(boids_in_quadrant[i])) {
-        if (distance < this.align_proximity) {
-          if (distance < this.cohesion_proximity){
-            if (this.isFriendly(boids_in_quadrant[i])) {
-              align_steering.add(boids_in_quadrant[i].velocity);
-             } else {
-              const lerp = p5.Vector.lerp(align_steering, boids_in_quadrant[i].velocity, 0.2);
-              align_steering.add(lerp);
-            }
-          } 
+        if (distance < this.align_proximity && this.isFriendly(fish_in_quad[i])) {
+          align_steering.add(fish_in_quad[i].velocity);
           align_total++;
         }
 
         // Cohesion
-        if (distance < this.cohesion_proximity && this.isFriendly(boids_in_quadrant[i])) {
-          cohesion_steering.add(boids_in_quadrant[i].position);
+        if (distance < this.cohesion_proximity && this.isFriendly(fish_in_quad[i])) {
+          cohesion_steering.add(fish_in_quad[i].position);
           cohesion_total++;
         }
         // Separation
         if (distance < this.separation_proximity) {
-          const difference = p5.Vector.sub(this.position, boids_in_quadrant[i].position);
+          const difference = p5.Vector.sub(this.position, fish_in_quad[i].position);
           const dif_mag = difference.mag();
           if (dif_mag === 0) continue;
           difference.div(dif_mag * dif_mag);
           separation_steering.add(difference);
           separation_total++;
         }
-        // Environment interaction
-        if (this.special && this.inView(boids_in_quadrant[i]) && distance < this.special_proximity) {
-          this.interact(boids_in_quadrant[i]);
+        // Move towards prey and away from predators
+        if (this.inView(fish_in_quad[i]) && distance < this.view_proximity) {
+          this.interact(fish_in_quad[i]);
         }
     }
     const alignVector = this.getAlignVector(align_steering, align_total);
@@ -128,7 +114,7 @@ class Fish {
       steering.div(total);
       steering.setMag(this.max_speed);
       steering.sub(this.velocity);
-      steering.limit(this.max_force * this.mass);
+      steering.limit(this.max_force);
     }
     return steering;
   }
@@ -139,7 +125,7 @@ class Fish {
       steering.sub(this.position);
       steering.setMag(this.max_speed);
       steering.sub(this.velocity);
-      steering.limit(this.max_force * this.mass);
+      steering.limit(this.max_force);
     }
     return steering;
   }
@@ -149,17 +135,22 @@ class Fish {
       steering.div(total);
       steering.setMag(this.max_speed + 0.5);
       steering.sub(this.velocity);
-      steering.limit(this.max_force * this.mass);
+      steering.limit(this.max_force);
     }
     return steering;
   }
 
    interact(target) {
-    if(this.team === target.team) {
-      env.breed_event(this, target);
-    } else {
-      console.log('Boid eaten');
-      env.expire_event(this, target);
+    // Check if target is prey 
+    if (this.trophic_level > target.trophic_level) {
+
+      const dist = p5.Vector.dist(this.position, target.position)
+      // If prey is close enough then eat
+      if (dist < this.eat_distance) {
+        env.expire_event(this, target);
+      } else {
+
+      }
     }
   }
 
@@ -172,8 +163,7 @@ class Fish {
   }
 
   isFriendly(target) {
-    if (this.special) return true;
-    return this.team === target.team;
+    return this.trophic_level === target.trophic_level;
   }
 
   update() {
