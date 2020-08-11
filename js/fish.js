@@ -14,9 +14,9 @@ class Fish {
     this.velocity = p5.Vector.random2D();
     this.velocity.setMag(random(2, 4));
     this.acceleration = createVector();
-    this.align_proximity = 30;
-    this.cohesion_proximity = 20;
-    this.separation_proximity = 35;
+    this.align_proximity = stats.align_proximity;
+    this.cohesion_proximity = stats.cohesion_proximity;
+    this.separation_proximity = stats.separation_proximity;
     this.edge_proximity = 15;
     this.largest_proximity = this.align_proximity;
     this.eat_distance = 5;
@@ -32,6 +32,7 @@ class Fish {
     this.color = stats.color;
     this.view_proximity = stats.view_proximity;
     this.num_offspring = stats.num_offspring;
+    this.health = 0; 
   }
 
   edges() {
@@ -60,12 +61,17 @@ class Fish {
     let align_steering = createVector();
     let cohesion_steering = createVector();
     let separation_steering = createVector();
-    let environment_steering = createVector();
+    let prey_steering = createVector();
+    let predator_steering = createVector();
+
 
     let align_total = 0;
     let cohesion_total = 0;
     let separation_total = 0;
-    let enviro_total = 0;
+    let predator_count = 0;
+    let closest_prey;
+    let closest_prey_dist = Infinity;
+
 
     for (let i = 0; i < fish_in_quad.length; i++) {
         const distance = dist(
@@ -88,7 +94,7 @@ class Fish {
           cohesion_total++;
         }
         // Separation
-        if (distance < this.separation_proximity) {
+        if (distance < this.separation_proximity && this.isFriendly(fish_in_quad[i])) {
           const difference = p5.Vector.sub(this.position, fish_in_quad[i].position);
           const dif_mag = difference.mag();
           if (dif_mag === 0) continue;
@@ -98,15 +104,39 @@ class Fish {
         }
         // Move towards prey and away from predators
         if (this.inView(fish_in_quad[i]) && distance < this.view_proximity) {
-          this.interact(fish_in_quad[i]);
+          // Prey
+          if (this.trophic_level - 1 === fish_in_quad[i].trophic_level) {
+            const dist = p5.Vector.dist(this.position, fish_in_quad[i].position)
+            if ( dist < closest_prey_dist) {
+              closest_prey_dist = dist;
+              closest_prey = fish_in_quad[i];
+            }
+          } else if(this.trophic_level + 1 === fish_in_quad[i].trophic_level) {
+            const difference = p5.Vector.sub(this.position, fish_in_quad[i].position);
+            const dif_mag = difference.mag();
+            if (dif_mag === 0) continue;
+            difference.div(dif_mag * dif_mag);
+            predator_steering.add(difference);
+            predator_count++;
+          }
         }
     }
-    const alignVector = this.getAlignVector(align_steering, align_total);
-    const cohesionVector = this.getCohesionVector(cohesion_steering, cohesion_total);
-    const separationVector = this.getSeparationVector(separation_steering, separation_total);
-    this.acceleration.add(alignVector);
-    this.acceleration.add(cohesionVector);
-    this.acceleration.add(separationVector);
+
+
+    if (predator_count > 0) {
+      const predatorVector = this.getSeparationVector(predator_steering, predator_count, 100);
+      this.acceleration.add(predatorVector);
+    } else if (predator_count === 0 && closest_prey) {
+      const preyVector = this.seek(closest_prey);
+      this.acceleration.add(preyVector);
+    } else {
+      const alignVector = this.getAlignVector(align_steering, align_total);
+      const cohesionVector = this.getCohesionVector(cohesion_steering, cohesion_total);
+      const separationVector = this.getSeparationVector(separation_steering, separation_total);
+      this.acceleration.add(alignVector);
+      this.acceleration.add(cohesionVector);
+      this.acceleration.add(separationVector);
+    }
   }
 
   getAlignVector(steering, total) {
@@ -130,35 +160,32 @@ class Fish {
     return steering;
   }
 
-  getSeparationVector(steering, total) {
+  getSeparationVector(steering, total, urgency = 1.5) {
     if (total > 0) {
       steering.div(total);
-      steering.setMag(this.max_speed + 0.5);
-      steering.sub(this.velocity);
+      steering.setMag(this.max_speed);
+      steering.sub((this.velocity));
+      steering.mult(urgency)
       steering.limit(this.max_force);
     }
     return steering;
   }
 
-   interact(target) {
+   seek(target) {
     // Check if target is prey 
-    if (this.trophic_level > target.trophic_level) {
+    const desired = p5.Vector.sub(target.position, this.position);
+    desired.setMag(this.max_speed);
 
-      const dist = p5.Vector.dist(this.position, target.position)
-      // If prey is close enough then eat
-      if (dist < this.eat_distance) {
-        env.expire_event(this, target);
-      } else {
-
-      }
-    }
+    const steer = p5.Vector.sub(desired, this.velocity);
+    steer.mult(25);
+    steer.limit(this.max_force);
+    return steer;
   }
 
   inView(target) {
     const sub = p5.Vector.sub(target.position, this.position);
     const angleBetween = abs(this.velocity.angleBetween(sub));
     const inView = angleBetween < (this.fov / 2);
-    // if(this.special) debugger;
     return inView;
   }
 
@@ -174,18 +201,27 @@ class Fish {
   }
 
   show() {
-    strokeWeight(this.mass);
+    strokeWeight(1);
     stroke(this.color);
-    noFill(); // It is more performant without filling
+    fill(this.color); // It is more performant without filling
 
-		const r = 3;
+		const r = this.mass;
 		const angle = this.velocity.heading();
-		const anglePlus = 2.5;
+    const anglePlus = 2.5;
+    const aX = this.position.x + Math.cos(angle) * r;
+    const aY = this.position.y + Math.sin(angle) * r;
+    const bX = this.position.x + Math.cos(angle + anglePlus) * r;
+    const bY = this.position.y + Math.sin(angle + anglePlus) * r;
+    const cX = this.position.x + Math.cos(angle - anglePlus) * r;
+    const cY = this.position.y + Math.sin(angle - anglePlus) * r;
+
+
     triangle(
-			this.position.x + Math.cos(angle) * r, this.position.y + Math.sin(angle) * r,
-			this.position.x + Math.cos(angle + anglePlus) * r, this.position.y + Math.sin(angle + anglePlus) * r,
-			this.position.x + Math.cos(angle - anglePlus) * r, this.position.y + Math.sin(angle - anglePlus) * r
+			aX, aY,
+			bX, bY,
+			cX, cY
     );
+
     return this;
   }
 }

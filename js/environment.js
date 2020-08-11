@@ -2,8 +2,8 @@ class Environment {
   constructor(qt) {
     this.flock = [];
     this.qt = qt;
-    this.tuna_count = 5;
-    this.sardine_count = 50;
+    this.tuna_count = 20;
+    this.sardine_count = 100;
     this.krill_count = 500;
     this.fish = [];
 
