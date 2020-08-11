@@ -2,9 +2,9 @@ class Environment {
   constructor(qt) {
     this.flock = [];
     this.qt = qt;
-    this.tuna_count = 20;
-    this.sardine_count = 100;
-    this.krill_count = 500;
+    this.tuna_count = 15;
+    this.sardine_count = 150;
+    this.krill_count = 600;
     this.fish = [];
 
     for (let i = 0; i < this.tuna_count; i++) { 
@@ -26,41 +26,9 @@ class Environment {
     }
   }
 
-  breed_event(source) {
-    const will_breed = floor(random(source.breed_chance));
-    if (will_breed !== 0) return;
-    for (let i = 0; i < this.num_offspring; i++) {
-      const stats = { max_force, mass, max_speed, team: source.team };
-      const position = source.position;
-      this.add_fish(position, stats);
-    }
-  }
-
-  expire_event(source, target) {
-    if(target.special) {
-      target.mass = this.breed_mass_min;
-      source.mass += this.expire_mass_reward; 
-      return;
-    }
-    const will_expire = floor(random(this.expire_chance));
-    if (will_expire !== 0) return;
-    target.deleted = true;
-    source.mass += this.expire_mass_reward;
-    if(target.team) this.blue_team_count--;
-    else this.red_team_count--;
-  }
-
-  add_fish(p = null, _class) {
-    const index = this.flock.length;
-    const position = p || { x: random(width), y: random(height) };
-    const new_fish = new _class(position);
-    this.fish.push(new_boid);
-
-    return new_fish;
-  }
-
   draw() {
     const new_qt = new QuadTree(canvas_boundary);
+    const offspring = [];
     for(let i = 0; i < this.fish.length; i++) {
       if(this.fish[i].deleted)  {
         this.fish.splice(i, 1);
@@ -68,11 +36,18 @@ class Environment {
       }
   
       this.fish[i].edges();
-      this.fish[i].flock();
+      const hungry = this.fish[i].isHungry();
+      const food = this.fish[i].flock(hungry);
+      if (food) this.fish[i].eat(food);
+      const spawn = this.fish[i].breed();
+      if (spawn) offspring.push(spawn);
+      const alive = this.fish[i].burnCalories();
+      this.fish[i].deleted = !alive;
       this.fish[i].update();
       const fish = this.fish[i].show();
       new_qt.insert(fish);
     }
+    this.fish = this.fish.concat(offspring);
     this.qt = new_qt;
   }
 }

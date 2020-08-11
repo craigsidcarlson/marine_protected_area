@@ -18,10 +18,6 @@ class Fish {
     this.cohesion_proximity = stats.cohesion_proximity;
     this.separation_proximity = stats.separation_proximity;
     this.edge_proximity = 15;
-    this.largest_proximity = this.align_proximity;
-    this.eat_distance = 5;
-    if (this.cohesion_proximity > this.largest_proximity) this.largest_proximity = this.cohesion_proximity;
-    if (this.separation_proximity > this.largest_proximity) this.largest_proximity = this.separation_proximity;
 
     // Fish properties
     this.max_force = stats.max_force;
@@ -32,7 +28,8 @@ class Fish {
     this.color = stats.color;
     this.view_proximity = stats.view_proximity;
     this.num_offspring = stats.num_offspring;
-    this.health = 0; 
+    this.eat_distance = 5;
+
   }
 
   edges() {
@@ -54,14 +51,13 @@ class Fish {
     this.velocity.setMag(incoming_mag);
   }
 
-  async flock() {
-    const approximate_range = new Rectangle(this.position.x, this.position.y, this.largest_proximity/2, this.largest_proximity/2);
+  flock(hungry) {
+    const approximate_range = new Rectangle(this.position.x, this.position.y, this.view_proximity/2, this.view_proximity/2);
     const fish_in_quad = env.qt.query(approximate_range);
 
     let align_steering = createVector();
     let cohesion_steering = createVector();
     let separation_steering = createVector();
-    let prey_steering = createVector();
     let predator_steering = createVector();
 
 
@@ -71,6 +67,8 @@ class Fish {
     let predator_count = 0;
     let closest_prey;
     let closest_prey_dist = Infinity;
+    let eaten = false;
+    let food;
 
 
     for (let i = 0; i < fish_in_quad.length; i++) {
@@ -105,9 +103,12 @@ class Fish {
         // Move towards prey and away from predators
         if (this.inView(fish_in_quad[i]) && distance < this.view_proximity) {
           // Prey
-          if (this.trophic_level - 1 === fish_in_quad[i].trophic_level) {
-            const dist = p5.Vector.dist(this.position, fish_in_quad[i].position)
-            if ( dist < closest_prey_dist) {
+          if (hungry && !eaten && this.trophic_level - 1 === fish_in_quad[i].trophic_level) {
+            const dist = p5.Vector.dist(this.position, fish_in_quad[i].position);
+            if (dist < this.eat_distance) {
+              fish_in_quad[i].deleted = true;
+              food = fish_in_quad[i];
+            } else if (dist < closest_prey_dist) {
               closest_prey_dist = dist;
               closest_prey = fish_in_quad[i];
             }
@@ -127,6 +128,9 @@ class Fish {
       const predatorVector = this.getSeparationVector(predator_steering, predator_count, 100);
       this.acceleration.add(predatorVector);
     } else if (predator_count === 0 && closest_prey) {
+      if (closest_prey_dist < this.eat_distance) {
+
+      }
       const preyVector = this.seek(closest_prey);
       this.acceleration.add(preyVector);
     } else {
@@ -137,6 +141,7 @@ class Fish {
       this.acceleration.add(cohesionVector);
       this.acceleration.add(separationVector);
     }
+    return food;
   }
 
   getAlignVector(steering, total) {
