@@ -78,7 +78,7 @@ class Fish {
           fish_in_quad[i].position.x,
           fish_in_quad[i].position.y
         );
-        if (distance === 0) continue;
+        if (distance === 0) continue; // Cant see itself
 
         // Alignment
         if (distance < this.align_proximity && this.isFriendly(fish_in_quad[i])) {

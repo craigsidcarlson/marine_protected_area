@@ -14,7 +14,7 @@ class Tuna extends Fish {
       calories: 100
     }  
     super(stats, position);
-    this.health = 0.5;
+    this.health = position == null ? 10 : 5;
     this.breed_rate = 0.0001;
     this.num_offspring = 1;
   }
@@ -24,7 +24,7 @@ class Tuna extends Fish {
   }
 
   eat(food) {
-    this.health += 0.1;
+    this.health += 1;
   }
 
   age() {
@@ -33,14 +33,14 @@ class Tuna extends Fish {
   }
 
   breed() {
-    if (this.health > 0.5 && random(0, 1) < this.breed_rate) {
+    if (this.health > 5 && random(0, 1) < this.breed_rate) {
       return new Tuna(this.position);
     }
   }
 
   burnCalories() {
     // Lose 1 percent health per second at 30 fps
-    this.health -= (0.005 / 30);
+    this.health -= (0.075 / 30);
     return this.health > 0;
   }
 }

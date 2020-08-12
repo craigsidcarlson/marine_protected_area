@@ -9,6 +9,10 @@ class Environment {
     this.sardine_carry_capacity = 250;
     this.plankton_carry_capacity = 650;
     this.fish = [];
+    this.port = createVector(width/2, height);
+    this.boat_count = 1;
+    this.fleet = [];
+    this.fish_caught = 0;
 
     for (let i = 0; i < this.tuna_count; i++) { 
       const tuna = new Tuna();
@@ -27,12 +31,27 @@ class Environment {
       this.fish.push(plankton);
       this.qt.insert(plankton);
     }
+
+    for (let i = 0; i < this.boat_count; i++) { 
+      const boat = new Boat(this.port);
+      this.fleet.push(boat);
+    }
   }
 
   draw() {
     const new_qt = new QuadTree(canvas_boundary);
     const offspring = [];
-    for(let i = 0; i < this.fish.length; i++) {
+    for (let i = 0; i < this.fleet.length; i++) {
+      this.fleet[i].boundaries();
+      if (this.fleet[i].atCapacity()){
+        const caught = this.fleet[i].dock();
+        if (caught) this.caught += caught;
+      } 
+      else this.fleet[i].fish();
+      this.fleet[i].update();
+      this.fleet[i].show();
+    }
+    for (let i = 0; i < this.fish.length; i++) {
       if(this.fish[i].deleted)  {
         this.fish.splice(i, 1);
         continue;

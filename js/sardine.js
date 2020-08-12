@@ -14,8 +14,8 @@ class Sardine extends Fish {
       calories: 10
     };   
     super(stats, position);
-    this.health = 0.7;
-    this.breed_rate = 0.0035;
+    this.health = position == null ? 1 : 0.7;
+    this.breed_rate = 0.004;
     this.num_offspring = 3;
   }
   isHungry() {

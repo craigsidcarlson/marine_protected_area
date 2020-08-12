@@ -9,8 +9,8 @@ let left_edge_vector
 let right_edge_vector;
 let frame_rate;
 function setup() {
-  width = windowWidth * 0.5;
-  height = windowHeight * 0.5;
+  width = windowWidth < 400 ? windowWidth : windowWidth * 0.5;
+  height = windowHeight < 400 ? windowHeight : windowHeight * 0.4;;
   x = (windowWidth - width) / 2;
   y = (windowHeight - height) / 2;
   const cnv = createCanvas(width, height);
@@ -27,7 +27,7 @@ function setup() {
 }
 
 function draw() {
-  background(44, 62, 80);
+  background(34, 52, 70);
   env.draw();
   strokeWeight(0);
   textSize(12);
