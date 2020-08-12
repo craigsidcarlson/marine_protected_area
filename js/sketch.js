@@ -9,8 +9,8 @@ let left_edge_vector
 let right_edge_vector;
 let frame_rate;
 function setup() {
-  width = windowWidth * 0.75;
-  height = windowHeight * 0.75;
+  width = windowWidth * 0.5;
+  height = windowHeight * 0.5;
   x = (windowWidth - width) / 2;
   y = (windowHeight - height) / 2;
   const cnv = createCanvas(width, height);

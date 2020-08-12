@@ -2,7 +2,7 @@ class Tuna extends Fish {
   constructor(position = null) {
     const stats = {
       max_force: 0.1,
-      max_speed: 3,
+      max_speed: 2.5,
       mass: 6,
       fov: 2 * PI,
       trophic_level: 4,
@@ -33,14 +33,14 @@ class Tuna extends Fish {
   }
 
   breed() {
-    if (random(0, 1) < this.breed_rate) {
+    if (this.health > 0.5 && random(0, 1) < this.breed_rate) {
       return new Tuna(this.position);
     }
   }
 
   burnCalories() {
     // Lose 1 percent health per second at 30 fps
-    this.health -= (0.02 / 30);
+    this.health -= (0.005 / 30);
     return this.health > 0;
   }
 }

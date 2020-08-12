@@ -28,7 +28,7 @@ class Fish {
     this.color = stats.color;
     this.view_proximity = stats.view_proximity;
     this.num_offspring = stats.num_offspring;
-    this.eat_distance = 5;
+    this.eat_distance = 4;
 
   }
 
@@ -104,15 +104,14 @@ class Fish {
         if (this.inView(fish_in_quad[i]) && distance < this.view_proximity) {
           // Prey
           if (hungry && !eaten && this.trophic_level - 1 === fish_in_quad[i].trophic_level) {
-            const dist = p5.Vector.dist(this.position, fish_in_quad[i].position);
-            if (dist < this.eat_distance) {
+            if (distance < this.eat_distance) {
               fish_in_quad[i].deleted = true;
               food = fish_in_quad[i];
-            } else if (dist < closest_prey_dist) {
-              closest_prey_dist = dist;
+            } else if (distance < closest_prey_dist) {
+              closest_prey_dist = distance;
               closest_prey = fish_in_quad[i];
             }
-          } else if(this.trophic_level + 1 === fish_in_quad[i].trophic_level) {
+          } else if(this.trophic_level < fish_in_quad[i].trophic_level) {
             const difference = p5.Vector.sub(this.position, fish_in_quad[i].position);
             const dif_mag = difference.mag();
             if (dif_mag === 0) continue;
@@ -128,9 +127,6 @@ class Fish {
       const predatorVector = this.getSeparationVector(predator_steering, predator_count, 100);
       this.acceleration.add(predatorVector);
     } else if (predator_count === 0 && closest_prey) {
-      if (closest_prey_dist < this.eat_distance) {
-
-      }
       const preyVector = this.seek(closest_prey);
       this.acceleration.add(preyVector);
     } else {
@@ -165,7 +161,7 @@ class Fish {
     return steering;
   }
 
-  getSeparationVector(steering, total, urgency = 1.5) {
+  getSeparationVector(steering, total, urgency = 2) {
     if (total > 0) {
       steering.div(total);
       steering.setMag(this.max_speed);
@@ -188,6 +184,7 @@ class Fish {
   }
 
   inView(target) {
+    if (this.fov === (2 * PI)) return true;
     const sub = p5.Vector.sub(target.position, this.position);
     const angleBetween = abs(this.velocity.angleBetween(sub));
     const inView = angleBetween < (this.fov / 2);
@@ -208,8 +205,8 @@ class Fish {
   show() {
     strokeWeight(1);
     stroke(this.color);
-    fill(this.color); // It is more performant without filling
-
+    // fill(this.color); // It is more performant without filling
+    noFill();
 		const r = this.mass;
 		const angle = this.velocity.heading();
     const anglePlus = 2.5;

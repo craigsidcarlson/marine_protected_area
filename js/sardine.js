@@ -2,20 +2,20 @@ class Sardine extends Fish {
   constructor(position = null) {
     const stats = {
       max_force: 0.08,
-      max_speed: 2,
+      max_speed: 2.2,
       mass: 3,
       fov: 2 * PI,
       trophic_level: 3,
       color: color(246, 193, 1),
-      view_proximity: 35,
+      view_proximity: 45,
       align_proximity: 35,
       cohesion_proximity: 30,
       separation_proximity: 30,
       calories: 10
     };   
     super(stats, position);
-    this.health = 0.5;
-    this.breed_rate = 0.0001;
+    this.health = 0.7;
+    this.breed_rate = 0.0035;
     this.num_offspring = 3;
   }
   isHungry() {
@@ -27,14 +27,14 @@ class Sardine extends Fish {
   }
 
   breed() {
-    if (random(0, 1) < this.breed_rate) {
+    if (this.health > 0.5 && random(0, 1) < this.breed_rate) {
       return new Sardine(this.position);
     }
   }
 
   burnCalories() {
     // Lose 1 percent health per second at 30 fps
-    this.health -= (0.01 / 30);
+    this.health -= (0.0075 / 30);
     return this.health > 0
   }
 }

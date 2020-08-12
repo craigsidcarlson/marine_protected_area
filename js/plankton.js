@@ -1,4 +1,4 @@
-class Krill extends Fish {
+class Plankton extends Fish {
   constructor(position = null) {
     const stats = {
       max_force: 0.06,
@@ -7,7 +7,7 @@ class Krill extends Fish {
       fov: 2 * PI,
       trophic_level: 2,
       color: color(254, 127, 156),
-      view_proximity: 15,
+      view_proximity: 25,
       align_proximity: 15,
       cohesion_proximity: 10,
       separation_proximity: 25,
@@ -15,7 +15,7 @@ class Krill extends Fish {
     };   
     super(stats, position);
     this.health = 1;
-    this.breed_rate = 0.001;
+    this.breed_rate = 0.003;
     this.num_offspring = 1;
 
   }
@@ -28,13 +28,13 @@ class Krill extends Fish {
   }
 
   breed() {
-    if (random(0, 1) < this.breed_rate) {
-      return new Krill(this.position);
+    if (this.health > 0.5 && random(0, 1) < this.breed_rate) {
+      return new Plankton(this.position);
     }
   }
 
   burnCalories() {
-    // No calorie loss for krill
+    // No calorie loss for plankton
     // Lose 1 percent health per second at 30 fps
     // this.health -= (0.01 / 30);
     return this.health > 0;
