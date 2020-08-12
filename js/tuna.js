@@ -11,7 +11,7 @@ class Tuna extends Fish {
       align_proximity: 35,
       cohesion_proximity: 30,
       separation_proximity: 40,
-      calories: 100
+      calories: 10
     }  
     super(stats, position);
     this.health = position == null ? 10 : 5;

@@ -11,7 +11,7 @@ class Sardine extends Fish {
       align_proximity: 35,
       cohesion_proximity: 30,
       separation_proximity: 30,
-      calories: 10
+      calories: 1
     };   
     super(stats, position);
     this.health = position == null ? 1 : 0.7;

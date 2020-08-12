@@ -5,28 +5,29 @@ class Boat {
     this.acceleration = createVector();
     this.target_fish = 'Tuna';
     this.target = null;
+    this.target_color = null;
     this.legal_limit = 7;
     this.capacity = 10;
     this.caught = 0;
     this.fishing = true; // true: FISHING    false: DOCKING
     this.limit = true; // Fishing limits are imposed
     // Physics properties
-    this.view_distance = 100;
-    this.give_up_dist = 250;
-    this.max_speed = 2;
+    this.view_distance = 150;
+    this.give_up_dist = 150;
+    this.max_speed = 1;
     this.catch_distance = 15;
     this.boundary_distance = 5;
     this.color = color(255, 0, 0);
   }
 
   fish() {
-    const approximate_range = new Rectangle(this.position.x, this.position.y, this.view_distance/2, this.view_distance/2);
-    const fish_in_quad = env.qt.query(approximate_range);
+
     if (this.target) {
       const dist_to_target = this.position.dist(this.target.position);
       if (dist_to_target < this.catch_distance) {
         this.target.deleted = true;
-        this.caught += this.target.health;
+        this.caught += this.target.calories;
+        console.log(`Caught ${this.caught}`);
         this.target = null;
         return;
       } else {
@@ -38,7 +39,8 @@ class Boat {
         }
       }     
     }
-
+    const approximate_range = new Rectangle(this.position.x, this.position.y, this.view_distance/2, this.view_distance/2);
+    const fish_in_quad = env.qt.query(approximate_range);
     let closest_dist = Infinity;
     for (let i = 0; i < fish_in_quad.length; i++) {
       const fish_type = fish_in_quad[i].constructor.name;
@@ -47,6 +49,7 @@ class Boat {
       if (distance < closest_dist && distance < this.view_distance) {
           closest_dist = distance;
           this.target = fish_in_quad[i];
+          this.target_color = this.target.color;
       }
     }    
   }
@@ -85,32 +88,10 @@ class Boat {
     this.position.add(this.velocity);
     this.acceleration.mult(0);
   }
-  show() {
-    strokeWeight(1);
-    stroke(this.color);
-    // fill(this.color); // It is more performant without filling
-    noFill();
-		const r = 10;
-		const angle = this.velocity.heading();
-    const anglePlus = 2.5;
-    const aX = this.position.x + Math.cos(angle) * r;
-    const aY = this.position.y + Math.sin(angle) * r;
-    const bX = this.position.x + Math.cos(angle + anglePlus) * r;
-    const bY = this.position.y + Math.sin(angle + anglePlus) * r;
-    const cX = this.position.x + Math.cos(angle - anglePlus) * r;
-    const cY = this.position.y + Math.sin(angle - anglePlus) * r;
 
-
-    triangle(
-			aX, aY,
-			bX, bY,
-			cX, cY
-    );
-
-    return this;
-  }
 
   applyForce(force) {
+    force.limit(this.max_speed);
     this.acceleration.add(force);
   }
 
@@ -136,5 +117,22 @@ class Boat {
       steer.limit(this.max_force);
       this.applyForce(steer);
     }
+  }
+
+  show() {
+		const angle = this.velocity.heading() + PI / 2;;
+    push();
+    strokeWeight(2);
+    stroke(this.color);
+    // fill(this.color); // It is more performant without filling
+    if (this.fishing) noFill();
+    else fill(this.target_color);
+    translate(this.position.x, this.position.y);
+    rotate(angle);
+    ellipse(0, 0, 10, 16.18);
+    pop();
+   
+
+    return this;
   }
 }

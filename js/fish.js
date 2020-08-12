@@ -29,6 +29,7 @@ class Fish {
     this.view_proximity = stats.view_proximity;
     this.num_offspring = stats.num_offspring;
     this.eat_distance = 4;
+    this.calories = stats.calories;
 
   }
 

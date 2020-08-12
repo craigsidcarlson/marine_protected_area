@@ -44,10 +44,13 @@ class Environment {
     for (let i = 0; i < this.fleet.length; i++) {
       this.fleet[i].boundaries();
       if (this.fleet[i].atCapacity()){
+        this.fleet[i].fishing = false;
         const caught = this.fleet[i].dock();
         if (caught) this.caught += caught;
-      } 
-      else this.fleet[i].fish();
+      } else {
+        this.fleet[i].fishing = true;
+        this.fleet[i].fish();
+      }
       this.fleet[i].update();
       this.fleet[i].show();
     }
