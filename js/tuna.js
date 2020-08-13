@@ -2,7 +2,7 @@ class Tuna extends Fish {
   constructor(position = null) {
     const stats = {
       max_force: 0.1,
-      max_speed: 2.5,
+      max_speed: 2.7,
       mass: 6,
       fov: 2 * PI,
       trophic_level: 4,
@@ -15,12 +15,12 @@ class Tuna extends Fish {
     }  
     super(stats, position);
     this.health = position == null ? 10 : 5;
-    this.breed_rate = 0.0001;
+    this.breed_rate = 0.001;
     this.num_offspring = 1;
   }
 
   isHungry() {
-    return this.health <= 1;
+    return this.health <= 10;
   }
 
   eat(food) {
@@ -40,7 +40,7 @@ class Tuna extends Fish {
 
   burnCalories() {
     // Lose 1 percent health per second at 30 fps
-    this.health -= (0.075 / 30);
+    this.health -= (0.2 / 30);
     return this.health > 0;
   }
 }

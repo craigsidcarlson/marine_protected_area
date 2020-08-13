@@ -15,19 +15,20 @@ class Boat {
     this.view_distance = 150;
     this.give_up_dist = 150;
     this.max_speed = 1;
-    this.catch_distance = 15;
+    this.catch_distance = 10;
+    this.fuel = 1000;
     this.boundary_distance = 5;
     this.color = color(255, 0, 0);
   }
 
   fish() {
-
     if (this.target) {
       const dist_to_target = this.position.dist(this.target.position);
       if (dist_to_target < this.catch_distance) {
         this.target.deleted = true;
         this.caught += this.target.calories;
         console.log(`Caught ${this.caught}`);
+        this.target_color = this.target.color;
         this.target = null;
         return;
       } else {
@@ -49,7 +50,6 @@ class Boat {
       if (distance < closest_dist && distance < this.view_distance) {
           closest_dist = distance;
           this.target = fish_in_quad[i];
-          this.target_color = this.target.color;
       }
     }    
   }
@@ -62,9 +62,13 @@ class Boat {
   dock() {
     const dist_to_port = this.position.dist(env.port);
     if (dist_to_port < 5) {
-      const caught = this.caught;
+      const response = this.target ? { type: this.target.constructor.name, amount: this.caught } : null;
+      console.log(this.fuel);
+      this.fuel = 1000;
       this.caught = 0;
-      return caught;
+      this.target = null;
+      this.target_color = null;
+      return response;
     }
     else {
      const portVector = this.seek(env.port);
@@ -97,6 +101,7 @@ class Boat {
 
   boundaries() {
     let desired = null;
+    if (!this.fishing) return;
 
     if (this.position.x < this.boundary_distance) {
       desired = createVector(this.max_speed, this.velocity.y);
@@ -125,8 +130,12 @@ class Boat {
     strokeWeight(2);
     stroke(this.color);
     // fill(this.color); // It is more performant without filling
-    if (this.fishing) noFill();
-    else fill(this.target_color);
+    if (this.fishing){
+      noFill();
+    } else if (this.target_color) {
+       this.target_color.setAlpha(100);
+      fill(this.target_color);
+    } 
     translate(this.position.x, this.position.y);
     rotate(angle);
     ellipse(0, 0, 10, 16.18);

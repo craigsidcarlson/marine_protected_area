@@ -2,17 +2,21 @@ class Environment {
   constructor(qt) {
     this.flock = [];
     this.qt = qt;
-    this.tuna_count = 15;
-    this.sardine_count = 150;
-    this.plankton_count = 650;
+    // this.tuna_count = 15;
+    // this.sardine_count = 150;
+    // this.plankton_count = 650;
+    this.tuna_count = 1;
+    this.sardine_count = 2;
+    this.plankton_count = 10;
     this.tuna_carry_capacity = 30;
     this.sardine_carry_capacity = 250;
     this.plankton_carry_capacity = 650;
     this.fish = [];
     this.port = createVector(width/2, height);
-    this.boat_count = 1;
+    this.boat_count = 0;
     this.fleet = [];
-    this.fish_caught = 0;
+    this.tuna_caught = 0;
+    this.sardines_caught = 0;
 
     for (let i = 0; i < this.tuna_count; i++) { 
       const tuna = new Tuna();
@@ -41,19 +45,6 @@ class Environment {
   draw() {
     const new_qt = new QuadTree(canvas_boundary);
     const offspring = [];
-    for (let i = 0; i < this.fleet.length; i++) {
-      this.fleet[i].boundaries();
-      if (this.fleet[i].atCapacity()){
-        this.fleet[i].fishing = false;
-        const caught = this.fleet[i].dock();
-        if (caught) this.caught += caught;
-      } else {
-        this.fleet[i].fishing = true;
-        this.fleet[i].fish();
-      }
-      this.fleet[i].update();
-      this.fleet[i].show();
-    }
     for (let i = 0; i < this.fish.length; i++) {
       if(this.fish[i].deleted)  {
         this.fish.splice(i, 1);
@@ -67,6 +58,21 @@ class Environment {
       const fish = this.fish[i].show();
       new_qt.insert(fish);
     }
+    for (let i = 0; i < this.fleet.length; i++) {
+      this.fleet[i].boundaries();
+      if (this.fleet[i].atCapacity() || this.fleet[i].fuel < 0){
+        this.fleet[i].fishing = false;
+        const caught = this.fleet[i].dock();
+        this.tallyCatch(caught);
+      } else {
+        this.fleet[i].fishing = true;
+        this.fleet[i].fish();
+        this.fleet[i].fuel--;
+      }
+      this.fleet[i].update();
+      this.fleet[i].show();
+    }
+
     this.fish = this.fish.concat(offspring);
     this.qt = new_qt;
   }
@@ -114,4 +120,15 @@ class Environment {
     fish.deleted = !alive;
     fish.update();
   } 
+
+  tallyCatch(caught) {
+    if (!caught || !caught.type || !caught.amount) return;
+    switch(caught.type) {
+      case 'Tuna':
+        this.tuna_caught += caught.amount;
+        break
+      case 'Sardine':
+        this.sardines_caught += caught.amount;
+    }
+  }
 }
