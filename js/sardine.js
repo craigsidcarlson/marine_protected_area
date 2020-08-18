@@ -27,7 +27,8 @@ class Sardine extends Fish {
   }
 
   breed() {
-    if (this.health > 0.5 && random(0, 1) < this.breed_rate) {
+    // The healthlier the fish, the more likely it reproduces
+    if (random(0, 1) < (this.breed_rate * this.health)) {
       return new Sardine(this.position);
     }
   }

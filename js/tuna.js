@@ -27,13 +27,8 @@ class Tuna extends Fish {
     this.health += 1;
   }
 
-  age() {
-    this.breed();
-    this.burnCalories();
-  }
-
   breed() {
-    if (this.health > 5 && random(0, 1) < this.breed_rate) {
+    if (random(0, 1) < (this.breed_rate * (this.health / 10))) {
       return new Tuna(this.position);
     }
   }

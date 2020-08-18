@@ -30,6 +30,7 @@ class Fish {
     this.num_offspring = stats.num_offspring;
     this.eat_distance = 4;
     this.calories = stats.calories;
+    this.deleted = false;
 
   }
 
@@ -173,7 +174,7 @@ class Fish {
     return steering;
   }
 
-   seek(target) {
+  seek(target) {
     // Check if target is prey 
     const desired = p5.Vector.sub(target.position, this.position);
     desired.setMag(this.max_speed);

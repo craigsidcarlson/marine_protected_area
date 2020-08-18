@@ -11,8 +11,8 @@ let frame_rate;
 let tuna_count_div, sardine_count_div;
 let tuna_caught_div, sardine_caught_div;
 function setup() {
-  width = windowWidth < 400 ? windowWidth : windowWidth * 0.5;
-  height = windowHeight < 400 ? windowHeight : windowHeight * 0.4;;
+  width = 850;
+  height = 650;
   x = (windowWidth - width) / 2;
   y = (windowHeight - height) / 2;
   const cnv = createCanvas(width, height);

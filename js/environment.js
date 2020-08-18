@@ -6,8 +6,8 @@ class Environment {
     // this.sardine_count = 150;
     // this.plankton_count = 650;
     this.tuna_count = 1;
-    this.sardine_count = 2;
-    this.plankton_count = 10;
+    this.sardine_count = 10;
+    this.plankton_count = 50;
     this.tuna_carry_capacity = 30;
     this.sardine_carry_capacity = 250;
     this.plankton_carry_capacity = 650;
@@ -46,17 +46,21 @@ class Environment {
     const new_qt = new QuadTree(canvas_boundary);
     const offspring = [];
     for (let i = 0; i < this.fish.length; i++) {
-      if(this.fish[i].deleted)  {
-        this.fish.splice(i, 1);
-        continue;
-      }
-  
       this.fish[i].edges();
-      this.eat(this.fish[i]);
-      this.breed(this.fish[i], offspring);
+      const child = this.breed(this.fish[i]);
+      if (child) {
+        offspring.push(child);
+        new_qt.insert(child);
+      }
+      this.live(this.fish[i]);
       this.age(this.fish[i]);
-      const fish = this.fish[i].show();
-      new_qt.insert(fish);
+      if (this.fish[i].deleted)  {
+        this.decrementCount(this.fish[i]);
+        this.fish.splice(i, 1);
+      } else {
+        const fish = this.fish[i].show();
+        new_qt.insert(fish);
+      }
     }
     for (let i = 0; i < this.fleet.length; i++) {
       this.fleet[i].boundaries();
@@ -77,49 +81,51 @@ class Environment {
     this.qt = new_qt;
   }
 
-  eat(fish) {
+  live(fish) {
     const hungry = fish.isHungry();
     const food = fish.flock(hungry);
-    if (food) { fish.eat(food);
-      const food_type = food.constructor.name;
-      switch(food_type){
-        case 'Sardine':
-          this.sardine_count--;
-          break;
-        case 'Plankton':
-          this.plankton_count--;
-          break;
-      }
-  }
+    if (food) {
+      fish.eat(food);
+    }
   }
 
-  breed(fish, offspring) {
-    const spawn = fish.breed();
-    if (spawn) {
-      const spawn_type = fish.constructor.name;
-      switch(spawn_type){
-        case 'Tuna':
-          if (this.tuna_count > this.tuna_carry_capacity) break;
-          this.tuna_count++;
-        case 'Sardine':
-          if (this.sardine_count > this.sardine_carry_capacity) break;
-          this.sardine_count++;
-        case 'Plankton':
-          if (this.plankton_count > this.plankton_carry_capacity) break;
-          this.plankton_count++;
-        default:
-          offspring.push(spawn);
+  breed(fish) {
+    const child = fish.breed();
+    if (!child) return;
 
-      }
-
+    const child_type = fish.constructor.name;
+    if (child_type === 'Tuna' && this.tuna_count < this.tuna_carry_capacity) {
+      this.tuna_count++;
+      return child;
+    } else if (child_type === 'Sardine' && this.sardine_count < this.sardine_carry_capacity) {
+      this.sardine_count++;
+      return child;
+    } else if (child_type === 'Plankton' && this.plankton_count < this.plankton_carry_capacity) {
+      this.plankton_count++;
+      return child;
     }
   }
 
   age(fish) {
-    const alive = fish.burnCalories();
-    fish.deleted = !alive;
-    fish.update();
-  } 
+    const isAlive = fish.burnCalories();
+    if (isAlive) fish.update();
+    else fish.deleted = true;
+  }
+
+  decrementCount(fish) {
+    const fish_type = fish.constructor.name;
+    switch(fish_type) {
+      case 'Tuna':
+        this.tuna_count--;
+        break;
+      case 'Sardine':
+        this.sardine_count--;
+        break;
+      case 'Plankton':
+        this.plankton_count--;
+        break;
+    }
+  }
 
   tallyCatch(caught) {
     if (!caught || !caught.type || !caught.amount) return;

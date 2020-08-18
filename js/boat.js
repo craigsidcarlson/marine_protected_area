@@ -27,7 +27,6 @@ class Boat {
       if (dist_to_target < this.catch_distance) {
         this.target.deleted = true;
         this.caught += this.target.calories;
-        console.log(`Caught ${this.caught}`);
         this.target_color = this.target.color;
         this.target = null;
         return;
@@ -63,7 +62,6 @@ class Boat {
     const dist_to_port = this.position.dist(env.port);
     if (dist_to_port < 5) {
       const response = this.target ? { type: this.target.constructor.name, amount: this.caught } : null;
-      console.log(this.fuel);
       this.fuel = 1000;
       this.caught = 0;
       this.target = null;
